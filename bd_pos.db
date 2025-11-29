@@ -1,0 +1,411 @@
+-- Tabla de Variables Globales (Configuraciones)
+CREATE TABLE variables_globales (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre VARCHAR(100) NOT NULL UNIQUE,
+    valor TEXT,
+    descripcion TEXT,
+    fecha_actualizacion DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla de Roles
+CREATE TABLE roles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre VARCHAR(50) NOT NULL UNIQUE,
+    descripcion TEXT,
+    nivel_acceso INTEGER DEFAULT 1, -- 1=basico, 2=intermedio, 3=admin
+    activo BOOLEAN DEFAULT 1,
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla de Módulos del Sistema
+CREATE TABLE modulos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre VARCHAR(50) NOT NULL UNIQUE,
+    icono VARCHAR(50),
+    ruta VARCHAR(100),
+    seccion VARCHAR(50), -- 'operaciones', 'catalogos', 'reportes', 'configuracion'
+    orden INTEGER DEFAULT 0,
+    activo BOOLEAN DEFAULT 1
+);
+
+-- Tabla de Permisos por Rol
+CREATE TABLE permisos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_rol INTEGER NOT NULL,
+    id_modulo INTEGER NOT NULL,
+    puede_ver BOOLEAN DEFAULT 0,
+    puede_crear BOOLEAN DEFAULT 0,
+    puede_editar BOOLEAN DEFAULT 0,
+    puede_eliminar BOOLEAN DEFAULT 0,
+    FOREIGN KEY (id_rol) REFERENCES roles(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_modulo) REFERENCES modulos(id) ON DELETE CASCADE,
+    UNIQUE(id_rol, id_modulo)
+);
+
+-- Tabla de Usuarios (Actualizada con relación a roles)
+CREATE TABLE usuarios (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    nombre VARCHAR(100) NOT NULL,
+    id_rol INTEGER NOT NULL DEFAULT 1,
+    activo BOOLEAN DEFAULT 1,
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_rol) REFERENCES roles(id)
+);
+
+-- Tabla de Categorías
+CREATE TABLE categorias (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre VARCHAR(50) NOT NULL,
+    color VARCHAR(10),
+    imagen_url TEXT,
+    orden INTEGER DEFAULT 0,
+    activo BOOLEAN DEFAULT 1
+);
+
+-- Tabla de Productos
+CREATE TABLE productos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    codigo VARCHAR(50) UNIQUE,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    id_categoria INTEGER NOT NULL,
+    precio_compra DECIMAL(8,2) DEFAULT 0,
+    precio_venta DECIMAL(8,2) NOT NULL,
+    stock DECIMAL(8,2) DEFAULT 0,
+    stock_minimo DECIMAL(8,2) DEFAULT 0,
+    unidad_medida VARCHAR(20) DEFAULT 'pieza',
+    aplica_iva BOOLEAN DEFAULT 1,
+    imagen_url TEXT,
+    imagenes TEXT, -- JSON con array de URLs
+    activo BOOLEAN DEFAULT 1,
+    fecha_creacion DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_categoria) REFERENCES categorias(id)
+);
+
+-- Tabla de Proveedores
+CREATE TABLE proveedores (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    contacto VARCHAR(100),
+    telefono VARCHAR(20),
+    email VARCHAR(100),
+    direccion TEXT,
+    rfc VARCHAR(20),
+    activo BOOLEAN DEFAULT 1,
+    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla de Clientes
+CREATE TABLE clientes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    nombre VARCHAR(100) NOT NULL,
+    telefono VARCHAR(20),
+    email VARCHAR(100),
+    direccion TEXT,
+    frecuente BOOLEAN DEFAULT 0,
+    notas TEXT,
+    fecha_registro DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabla de Cajas
+CREATE TABLE cajas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_usuario INTEGER NOT NULL,
+    fecha_apertura DATETIME DEFAULT CURRENT_TIMESTAMP,
+    fecha_cierre DATETIME,
+    monto_inicial DECIMAL(10,2) NOT NULL DEFAULT 0,
+    monto_final DECIMAL(10,2),
+    estado VARCHAR(20) DEFAULT 'abierta', -- 'abierta', 'cerrada'
+    observaciones TEXT,
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id)
+);
+
+-- Tabla de Ventas
+CREATE TABLE ventas (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    folio VARCHAR(20) UNIQUE,
+    id_caja INTEGER NOT NULL,
+    id_usuario INTEGER NOT NULL,
+    id_cliente INTEGER,
+    fecha_venta DATETIME DEFAULT CURRENT_TIMESTAMP,
+    subtotal DECIMAL(10,2) DEFAULT 0,
+    descuento DECIMAL(10,2) DEFAULT 0,
+    iva DECIMAL(10,2) DEFAULT 0,
+    total DECIMAL(10,2) DEFAULT 0,
+    metodo_pago VARCHAR(20) DEFAULT 'efectivo', -- 'efectivo', 'tarjeta', 'transferencia', 'mixto'
+    estado VARCHAR(20) DEFAULT 'completada', -- 'completada', 'cancelada'
+    observaciones TEXT,
+    FOREIGN KEY (id_caja) REFERENCES cajas(id),
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id),
+    FOREIGN KEY (id_cliente) REFERENCES clientes(id)
+);
+
+-- Tabla de Detalles de Venta
+CREATE TABLE venta_detalles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_venta INTEGER NOT NULL,
+    id_producto INTEGER NOT NULL,
+    cantidad DECIMAL(8,3) NOT NULL,
+    precio_unitario DECIMAL(8,2) NOT NULL,
+    descuento DECIMAL(8,2) DEFAULT 0,
+    total DECIMAL(8,2) NOT NULL,
+    baja BOOLEAN DEFAULT 0, -- Para identificar productos dados de baja
+    fecha_agregado DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_venta) REFERENCES ventas(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_producto) REFERENCES productos(id)
+);
+
+-- Tabla de Movimientos de Caja (Sistema Unificado)
+CREATE TABLE movimientos_caja (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_caja INTEGER NOT NULL,
+    id_usuario INTEGER NOT NULL,
+    tipo_movimiento VARCHAR(20) NOT NULL, -- 'venta', 'pago_proveedor', 'deposito', 'retiro', 'gasto'
+    concepto VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    monto DECIMAL(10,2) NOT NULL,
+    metodo_pago VARCHAR(20) DEFAULT 'efectivo', -- 'efectivo', 'tarjeta', 'transferencia'
+    referencia VARCHAR(50), -- Folio de venta, factura de pago, etc.
+    id_relacion INTEGER, -- ID de la venta, pago_proveedor, etc.
+    fecha_movimiento DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_caja) REFERENCES cajas(id),
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id)
+);
+
+-- Tabla de Pagos a Proveedores
+CREATE TABLE pagos_proveedores (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_proveedor INTEGER NOT NULL,
+    id_caja INTEGER NOT NULL,
+    id_usuario INTEGER NOT NULL,
+    concepto VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    monto DECIMAL(10,2) NOT NULL,
+    metodo_pago VARCHAR(20) NOT NULL, -- 'efectivo', 'transferencia', 'cheque'
+    referencia VARCHAR(50), -- Número de factura
+    fecha_pago DATETIME DEFAULT CURRENT_TIMESTAMP,
+    estado VARCHAR(20) DEFAULT 'completado', -- 'completado', 'pendiente'
+    FOREIGN KEY (id_proveedor) REFERENCES proveedores(id),
+    FOREIGN KEY (id_caja) REFERENCES cajas(id),
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id)
+);
+
+-- Tabla de Compras/Entradas de Inventario
+CREATE TABLE compras (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_proveedor INTEGER,
+    id_usuario INTEGER NOT NULL,
+    fecha_compra DATETIME DEFAULT CURRENT_TIMESTAMP,
+    total DECIMAL(10,2) DEFAULT 0,
+    observaciones TEXT,
+    FOREIGN KEY (id_proveedor) REFERENCES proveedores(id),
+    FOREIGN KEY (id_usuario) REFERENCES usuarios(id)
+);
+
+-- Tabla de Detalles de Compra
+CREATE TABLE compra_detalles (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id_compra INTEGER NOT NULL,
+    id_producto INTEGER NOT NULL,
+    cantidad DECIMAL(8,3) NOT NULL,
+    precio_unitario DECIMAL(8,2) NOT NULL,
+    total DECIMAL(8,2) NOT NULL,
+    FOREIGN KEY (id_compra) REFERENCES compras(id) ON DELETE CASCADE,
+    FOREIGN KEY (id_producto) REFERENCES productos(id)
+);
+
+-- =============================================
+-- INSERCIÓN DE DATOS INICIALES
+-- =============================================
+
+-- Insertar configuraciones iniciales
+INSERT INTO variables_globales (nombre, valor, descripcion) VALUES 
+('nombre_tienda', 'Mi Tienda', 'Nombre del establecimiento'),
+('direccion_tienda', 'Calle Principal #123', 'Dirección completa'),
+('telefono_tienda', '555-1234', 'Teléfono de contacto'),
+('iva_porcentaje', '0.16', 'Porcentaje de IVA aplicable'),
+('moneda', 'MXN', 'Símbolo de moneda'),
+('ticket_cabecera', 'Gracias por su compra', 'Mensaje cabecera ticket'),
+('ticket_pie', 'Vuelva pronto', 'Mensaje pie ticket'),
+('logo_url', '', 'URL del logo del negocio'),
+('stock_minimo_alerta', '5', 'Stock mínimo para alertas'),
+('database_initialized', '0', 'Indica si la BD fue inicializada con datos del API');
+
+-- Insertar roles básicos
+INSERT INTO roles (nombre, descripcion, nivel_acceso) VALUES 
+('Administrador', 'Acceso completo al sistema', 3),
+('Supervisor', 'Puede ver reportes y gestionar ventas', 2),
+('Cajero', 'Solo puede realizar ventas', 1);
+
+-- Insertar módulos del sistema
+INSERT INTO modulos (nombre, icono, ruta, seccion, orden) VALUES 
+-- Operaciones
+('Inicio', 'dashboard', '/dashboard', 'operaciones', 1),
+('Nueva Venta', 'shopping_cart', '/ventas', 'operaciones', 2),
+('Movimientos Caja', 'account_balance_wallet', '/caja', 'operaciones', 3),
+
+-- Catálogos
+('Productos', 'inventory_2', '/productos', 'catalogos', 1),
+('Clientes', 'people', '/clientes', 'catalogos', 2),
+('Proveedores', 'local_shipping', '/proveedores', 'catalogos', 3),
+
+-- Reportes
+('Reportes de Ventas', 'analytics', '/reportes', 'reportes', 1),
+('Compras', 'shopping_basket', '/compras', 'reportes', 2),
+
+-- Configuración
+('Usuarios', 'manage_accounts', '/usuarios', 'configuracion', 1),
+('Configuración', 'settings', '/configuracion', 'configuracion', 2);
+
+-- Insertar permisos para Administrador (acceso completo)
+INSERT INTO permisos (id_rol, id_modulo, puede_ver, puede_crear, puede_editar, puede_eliminar)
+SELECT 1, id, 1, 1, 1, 1 FROM modulos;
+
+-- Insertar permisos para Supervisor
+INSERT INTO permisos (id_rol, id_modulo, puede_ver, puede_crear, puede_editar, puede_eliminar) VALUES
+(2, 1, 1, 1, 1, 0), -- Inicio
+(2, 2, 1, 1, 1, 0), -- Nueva Venta
+(2, 3, 1, 1, 1, 0), -- Movimientos Caja
+(2, 4, 1, 1, 1, 0), -- Productos
+(2, 5, 1, 1, 1, 0), -- Clientes
+(2, 7, 1, 1, 0, 0), -- Reportes de Ventas
+(2, 8, 1, 1, 0, 0); -- Compras
+
+-- Insertar permisos para Cajero
+INSERT INTO permisos (id_rol, id_modulo, puede_ver, puede_crear, puede_editar, puede_eliminar) VALUES
+(3, 1, 1, 0, 0, 0), -- Inicio (solo ver)
+(3, 2, 1, 1, 0, 0), -- Nueva Venta (ver y crear)
+(3, 4, 1, 0, 0, 0), -- Productos (solo ver)
+(3, 5, 1, 1, 0, 0); -- Clientes (ver y crear)
+
+-- Insertar usuarios iniciales
+INSERT INTO usuarios (username, password_hash, nombre, id_rol) VALUES 
+('admin', 'admin123', 'Administrador Principal', 1),
+('supervisor', 'super123', 'María González - Supervisor', 2),
+('cajero', 'cajero123', 'Juan Pérez - Cajero', 3);
+
+-- Insertar categorías de productos
+INSERT INTO categorias (nombre, color, orden) VALUES 
+('Abarrotes', '#FF9800', 1),
+('Bebidas', '#2196F3', 2),
+('Lácteos', '#FFEB3B', 3),
+('Limpieza', '#4CAF50', 4),
+('Verdulería', '#8BC34A', 5);
+
+-- =============================================
+-- ÍNDICES PARA MEJOR RENDIMIENTO
+-- =============================================
+
+-- Índices para usuarios y roles
+CREATE INDEX idx_usuarios_rol ON usuarios(id_rol);
+CREATE INDEX idx_usuarios_username ON usuarios(username);
+CREATE INDEX idx_usuarios_activo ON usuarios(activo);
+
+-- Índices para permisos
+CREATE INDEX idx_permisos_rol ON permisos(id_rol);
+CREATE INDEX idx_permisos_modulo ON permisos(id_modulo);
+CREATE INDEX idx_permisos_rol_modulo ON permisos(id_rol, id_modulo);
+
+-- Índices para módulos
+CREATE INDEX idx_modulos_seccion ON modulos(seccion);
+CREATE INDEX idx_modulos_orden ON modulos(orden);
+CREATE INDEX idx_modulos_activo ON modulos(activo);
+
+-- Índices existentes para productos y ventas
+CREATE INDEX idx_productos_categoria ON productos(id_categoria);
+CREATE INDEX idx_ventas_fecha ON ventas(fecha_venta);
+CREATE INDEX idx_ventas_caja ON ventas(id_caja);
+CREATE INDEX idx_venta_detalles_venta ON venta_detalles(id_venta);
+CREATE INDEX idx_venta_detalles_baja ON venta_detalles(baja);
+CREATE INDEX idx_movimientos_caja_tipo ON movimientos_caja(tipo_movimiento);
+CREATE INDEX idx_movimientos_caja_fecha ON movimientos_caja(fecha_movimiento);
+CREATE INDEX idx_movimientos_caja_caja ON movimientos_caja(id_caja);
+
+-- =============================================
+-- TRIGGERS PARA AUTOMATIZACIÓN
+-- =============================================
+
+CREATE TRIGGER registrar_movimiento_venta
+AFTER INSERT ON ventas
+FOR EACH ROW
+WHEN NEW.estado = 'completada'
+BEGIN
+    INSERT INTO movimientos_caja (
+        id_caja, id_usuario, tipo_movimiento, concepto,
+        descripcion, monto, metodo_pago, referencia, id_relacion
+    )
+    VALUES (
+        NEW.id_caja, NEW.id_usuario, 'venta',
+        'Venta ' || NEW.folio,
+        'Venta realizada al cliente',
+        NEW.total,
+        NEW.metodo_pago,
+        NEW.folio,
+        NEW.id
+    );
+END;
+
+CREATE TRIGGER registrar_movimiento_pago_proveedor
+AFTER INSERT ON pagos_proveedores
+FOR EACH ROW
+WHEN NEW.estado = 'completado'
+BEGIN
+    INSERT INTO movimientos_caja (
+        id_caja, id_usuario, tipo_movimiento, concepto,
+        descripcion, monto, metodo_pago, referencia, id_relacion
+    )
+    VALUES (
+        NEW.id_caja, NEW.id_usuario, 'pago_proveedor',
+        'Pago: ' || NEW.concepto,
+        COALESCE(NEW.descripcion, 'Pago a proveedor'),
+        NEW.monto * -1, -- Monto negativo porque es salida
+        NEW.metodo_pago,
+        NEW.referencia,
+        NEW.id
+    );
+END;
+
+CREATE TRIGGER registrar_deposito_retiro
+AFTER INSERT ON movimientos_caja
+FOR EACH ROW
+WHEN NEW.tipo_movimiento IN ('deposito', 'retiro', 'gasto')
+BEGIN
+    -- Actualizar el monto final de la caja basado en el movimiento
+    UPDATE cajas SET monto_final = COALESCE(monto_final, monto_inicial) + NEW.monto 
+    WHERE id = NEW.id_caja AND estado = 'abierta';
+END;
+
+CREATE TRIGGER actualizar_stock_venta
+AFTER INSERT ON venta_detalles
+FOR EACH ROW
+BEGIN
+    UPDATE productos SET stock = stock - NEW.cantidad WHERE id = NEW.id_producto;
+END;
+
+CREATE TRIGGER actualizar_stock_compra
+AFTER INSERT ON compra_detalles
+FOR EACH ROW
+BEGIN
+    UPDATE productos SET stock = stock + NEW.cantidad WHERE id = NEW.id_producto;
+END;
+
+CREATE TRIGGER generar_folio_venta
+AFTER INSERT ON ventas
+FOR EACH ROW
+WHEN NEW.folio IS NULL
+BEGIN
+    UPDATE ventas SET folio = 'VTA-' || strftime('%Y%m%d') || '-' || substr('0000' || NEW.id, -4, 4) 
+    WHERE id = NEW.id;
+END;
+
+-- Trigger para actualizar fecha de actualización en variables_globales
+CREATE TRIGGER actualizar_fecha_variables
+AFTER UPDATE ON variables_globales
+FOR EACH ROW
+BEGIN
+    UPDATE variables_globales 
+    SET fecha_actualizacion = CURRENT_TIMESTAMP 
+    WHERE id = NEW.id;
+END;

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import '../screens/screens.dart';
 
 class Routes {
@@ -13,6 +12,7 @@ class Routes {
   static const String compras = '/compras';
   static const String reportes = '/reportes';
   static const String configuracion = '/configuracion';
+  static const String usuarios = '/usuarios';
   
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -26,6 +26,7 @@ class Routes {
       compras: (context) => ComprasScreen(),
       reportes: (context) => ReportesScreen(),
       configuracion: (context) => ConfiguracionScreen(),
+      usuarios: (context) => UsersScreen(),
     };
   }
 }

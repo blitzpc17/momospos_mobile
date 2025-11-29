@@ -1,3 +1,4 @@
+export 'package:momospos_mobile/screens/config/user_scr4een.dart';
 export 'package:momospos_mobile/screens/caja_screen.dart';
 export 'package:momospos_mobile/screens/clientes_screen.dart';
 export 'package:momospos_mobile/screens/compras_screen.dart';

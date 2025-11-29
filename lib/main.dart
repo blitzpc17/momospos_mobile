@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'routes/routes.dart';
+import 'providers/auth_provider.dart';
+import 'providers/user_provider.dart';
 
 void main() {
   runApp(MyApp());
@@ -8,39 +11,45 @@ void main() {
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: "MOMO'S POS",
-      theme: ThemeData(
-        primaryColor: Color(0xFF07598C),
-        colorScheme: ColorScheme.fromSwatch(
-        primarySwatch: MaterialColor(0xFF07598C, {
-           50: Color(0xFFE3F2FD),
-          100: Color(0xFFBBDEFB),
-          200: Color(0xFF90CAF9),
-          300: Color(0xFF64B5F6),
-          400: Color(0xFF42A5F5),
-          500: Color(0xFF07598C),
-          600: Color(0xFF03658C),
-          700: Color(0xFF1976D2),
-          800: Color(0xFF1565C0),
-          900: Color(0xFF0D47A1),
-        }),
-        ).copyWith(
-          secondary: Color(0xFF568FA6),
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => UserProvider()),
+      ],
+      child: MaterialApp(
+        title: "MOMO'S POS",
+        theme: ThemeData(
+          primaryColor: Color(0xFF07598C),
+          colorScheme: ColorScheme.fromSwatch(
+            primarySwatch: MaterialColor(0xFF07598C, {
+              50: Color(0xFFE3F2FD),
+              100: Color(0xFFBBDEFB),
+              200: Color(0xFF90CAF9),
+              300: Color(0xFF64B5F6),
+              400: Color(0xFF42A5F5),
+              500: Color(0xFF07598C),
+              600: Color(0xFF03658C),
+              700: Color(0xFF1976D2),
+              800: Color(0xFF1565C0),
+              900: Color(0xFF0D47A1),
+            }),
+          ).copyWith(
+            secondary: Color(0xFF568FA6),
+          ),
+          scaffoldBackgroundColor: Color(0xFFF2F2F2),
+          appBarTheme: AppBarTheme(
+            backgroundColor: Color(0xFF07598C),
+            elevation: 0,
+            iconTheme: IconThemeData(color: Colors.white),
+          ),
+          floatingActionButtonTheme: FloatingActionButtonThemeData(
+            backgroundColor: Color(0xFF03658C),
+          ),
         ),
-        scaffoldBackgroundColor: Color(0xFFF2F2F2),
-        appBarTheme: AppBarTheme(
-          backgroundColor: Color(0xFF07598C),
-          elevation: 0,
-          iconTheme: IconThemeData(color: Colors.white),
-        ),
-        floatingActionButtonTheme: FloatingActionButtonThemeData(
-          backgroundColor: Color(0xFF03658C),
-        ),
+        initialRoute: Routes.login,
+        routes: Routes.getRoutes(),
+        debugShowCheckedModeBanner: false,
       ),
-      initialRoute: Routes.login,
-      routes: Routes.getRoutes(),
-      debugShowCheckedModeBanner: false,
     );
   }
 }
