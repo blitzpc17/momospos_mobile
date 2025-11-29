@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
 import '../widgets/app_drawer.dart';
-import '../routes/routes.dart'; // ✅ Importar routes
+import '../routes/routes.dart';
 
 class DashboardScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final mediaQuery = MediaQuery.of(context);
+    final screenSize = mediaQuery.size;
+    final screenWidth = screenSize.width;
+    final screenHeight = screenSize.height;
+    final isTablet = screenWidth > 600;
+    final isLandscape = mediaQuery.orientation == Orientation.landscape;
+
     return Scaffold(
-      backgroundColor: Color(0xFFF2F2F2),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: Text("MOMO'S POS - Dashboard"),
-        backgroundColor: Color(0xFF07598C),
+        title: Center(child: Text("MOMO'S POS", style: TextStyle(color: Color(0xFFE3F2FD)),)),
+        backgroundColor: theme.primaryColor,
         actions: [
           IconButton(
             icon: Icon(Icons.refresh),
@@ -24,65 +32,154 @@ class DashboardScreen extends StatelessWidget {
         ],
       ),
       drawer: AppDrawer(),
-      body: SingleChildScrollView(
-        padding: EdgeInsets.all(16),
-        child: Column(
-          children: [
-            // Tarjeta de Resumen del Día
-            _buildDaySummaryCard(),
-            SizedBox(height: 20),
-            
-            // Métricas Rápidas
-            Row(
-              children: [
-                Expanded(child: _buildMetricCard("Ventas Hoy", "\$8,450", Icons.trending_up, Color(0xFF03658C))),
-                SizedBox(width: 12),
-                Expanded(child: _buildMetricCard("Productos Vendidos", "156", Icons.shopping_basket, Color(0xFF568FA6))),
-              ],
+      body: LayoutBuilder(
+        builder: (context, constraints) {
+          return SingleChildScrollView(
+            padding: EdgeInsets.all(_getScreenPadding(screenWidth)),
+            child: ConstrainedBox(
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight,
+              ),
+              child: Column(
+                children: [
+                  // Tarjeta de Resumen del Día
+                  _buildDaySummaryCard(context, screenWidth),
+                  SizedBox(height: _getSpacing(screenWidth)),
+                  
+                  // Métricas Rápidas - Layout responsive
+                  _buildMetricsSection(context, screenWidth, isTablet),
+                  SizedBox(height: _getSpacing(screenWidth)),
+                  
+                  // Estado de Caja
+                  _buildCajaStatusCard(context, screenWidth),
+                  
+                  SizedBox(height: _getSpacing(screenWidth)),
+                  
+                  // Ventas por Categoría
+                  _buildSalesByCategoryCard(context, screenWidth),
+                  
+                  SizedBox(height: _getSpacing(screenWidth)),
+                  
+                  // Productos Más Vendidos
+                  _buildTopProductsCard(context, screenWidth),
+                ],
+              ),
             ),
-            SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(child: _buildMetricCard("Clientes Atendidos", "45", Icons.people, Color(0xFF07598C))),
-                SizedBox(width: 12),
-                Expanded(child: _buildMetricCard("Ticket Promedio", "\$187.78", Icons.receipt, Color(0xFF585859))),
-              ],
-            ),
-            
-            SizedBox(height: 20),
-            
-            // Estado de Caja
-            _buildCajaStatusCard(context),
-            
-            SizedBox(height: 20),
-            
-            // Ventas por Categoría
-            _buildSalesByCategoryCard(),
-            
-            SizedBox(height: 20),
-            
-            // Productos Más Vendidos
-            _buildTopProductsCard(context),
-          ],
-        ),
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
-          Navigator.pushNamed(context, Routes.ventas); // ✅ Usar constante
+          Navigator.pushNamed(context, Routes.ventas);
         },
-        backgroundColor: Color(0xFF03658C),
+        backgroundColor: theme.colorScheme.primary,
         child: Icon(Icons.add_shopping_cart, color: Colors.white),
         tooltip: "Nueva Venta",
       ),
     );
   }
   
-  Widget _buildDaySummaryCard() {
+  Widget _buildMetricsSection(BuildContext context, double screenWidth, bool isTablet) {
+  final theme = Theme.of(context);
+  
+  if (isTablet) {
+    // Layout para tablet - 2x2 grid con altura intrínseca
+    return Column(
+      children: [
+        // Fila 1
+        IntrinsicHeight( // ← Hace que ambas tarjetas tengan la misma altura
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildMetricCard(
+                  context, "Ventas Hoy", "\$8,450", 
+                  Icons.trending_up, theme.colorScheme.primary, screenWidth, isTablet
+                ),
+              ),
+              SizedBox(width: _getSpacing(screenWidth)),
+              Expanded(
+                child: _buildMetricCard(
+                  context, "Productos Vendidos", "156", 
+                  Icons.shopping_basket, theme.colorScheme.secondary!, screenWidth, isTablet
+                ),
+              ),
+            ],
+          ),
+        ),
+        SizedBox(height: _getSpacing(screenWidth)),
+        // Fila 2
+        IntrinsicHeight( // ← Hace que ambas tarjetas tengan la misma altura
+          child: Row(
+            children: [
+              Expanded(
+                child: _buildMetricCard(
+                  context, "Clientes Atendidos", "45", 
+                  Icons.people, theme.primaryColor, screenWidth, isTablet
+                ),
+              ),
+              SizedBox(width: _getSpacing(screenWidth)),
+              Expanded(
+                child: _buildMetricCard(
+                  context, "Ticket Promedio", "\$187.78", 
+                  Icons.receipt, Color(0xFF585859), screenWidth, isTablet
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  } else {
+    // Layout para móvil - scroll horizontal con altura fija
+    return SizedBox(
+      height: _getMetricCardHeight(screenWidth),
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          Container(
+            width: _getMetricCardWidth(screenWidth, isTablet), // ← Ancho fijo
+            child: _buildMetricCard(
+              context, "Ventas Hoy", "\$8,450", 
+              Icons.trending_up, theme.colorScheme.primary, screenWidth, isTablet
+            ),
+          ),
+          SizedBox(width: _getSpacing(screenWidth)),
+          Container(
+            width: _getMetricCardWidth(screenWidth, isTablet), // ← Ancho fijo
+            child: _buildMetricCard(
+              context, "Productos Vendidos", "156", 
+              Icons.shopping_basket, theme.colorScheme.secondary!, screenWidth, isTablet
+            ),
+          ),
+          SizedBox(width: _getSpacing(screenWidth)),
+          Container(
+            width: _getMetricCardWidth(screenWidth, isTablet), // ← Ancho fijo
+            child: _buildMetricCard(
+              context, "Clientes Atendidos", "45", 
+              Icons.people, theme.primaryColor, screenWidth, isTablet
+            ),
+          ),
+          SizedBox(width: _getSpacing(screenWidth)),
+          Container(
+            width: _getMetricCardWidth(screenWidth, isTablet), // ← Ancho fijo
+            child: _buildMetricCard(
+              context, "Ticket Promedio", "\$187.78", 
+              Icons.receipt, Color(0xFF585859), screenWidth, isTablet
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+  Widget _buildDaySummaryCard(BuildContext context, double screenWidth) {
+    final theme = Theme.of(context);
+    
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(20),
+        padding: EdgeInsets.all(_getCardPadding(screenWidth)),
         child: Column(
           children: [
             Row(
@@ -91,7 +188,7 @@ class DashboardScreen extends StatelessWidget {
                 Text(
                   "Resumen del Día",
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: _getTitleFontSize(screenWidth),
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF585859),
                   ),
@@ -99,27 +196,27 @@ class DashboardScreen extends StatelessWidget {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                   decoration: BoxDecoration(
-                    color: Color(0xFF07598C).withOpacity(0.1),
+                    color: theme.primaryColor.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Text(
                     "Hoy",
                     style: TextStyle(
-                      color: Color(0xFF07598C),
+                      color: theme.primaryColor,
                       fontWeight: FontWeight.bold,
-                      fontSize: 12,
+                      fontSize: _getSmallFontSize(screenWidth),
                     ),
                   ),
                 ),
               ],
             ),
-            SizedBox(height: 20),
+            SizedBox(height: _getInnerSpacing(screenWidth)),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildSummaryItem("Ventas Totales", "\$12,450", Color(0xFF03658C)),
-                _buildSummaryItem("Efectivo", "\$8,230", Color(0xFF568FA6)),
-                _buildSummaryItem("Tarjeta", "\$4,220", Color(0xFF585859)),
+                _buildSummaryItem("Ventas Totales", "\$12,450", theme.colorScheme.primary, screenWidth),
+                _buildSummaryItem("Efectivo", "\$8,230", theme.colorScheme.secondary!, screenWidth),
+                _buildSummaryItem("Tarjeta", "\$4,220", Color(0xFF585859), screenWidth),
               ],
             ),
           ],
@@ -128,13 +225,13 @@ class DashboardScreen extends StatelessWidget {
     );
   }
   
-  Widget _buildSummaryItem(String label, String value, Color color) {
+  Widget _buildSummaryItem(String label, String value, Color color, double screenWidth) {
     return Column(
       children: [
         Text(
           value,
           style: TextStyle(
-            fontSize: 16,
+            fontSize: _getValueFontSize(screenWidth),
             fontWeight: FontWeight.bold,
             color: color,
           ),
@@ -143,7 +240,7 @@ class DashboardScreen extends StatelessWidget {
         Text(
           label,
           style: TextStyle(
-            fontSize: 12,
+            fontSize: _getLabelFontSize(screenWidth),
             color: Color(0xFF585859),
           ),
         ),
@@ -151,58 +248,83 @@ class DashboardScreen extends StatelessWidget {
     );
   }
   
-  Widget _buildMetricCard(String title, String value, IconData icon, Color color) {
+  
+
+  Widget _buildMetricCard(BuildContext context, String title, String value, 
+                        IconData icon, Color color, double screenWidth, bool isTablet) {
+    final theme = Theme.of(context);
+    
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      child: Padding(
-        padding: EdgeInsets.all(16),
+      child: Container(
+        width: double.infinity,
+        height: double.infinity,
+        padding: EdgeInsets.all(12), // ← Padding fijo más pequeño
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisSize: MainAxisSize.min, // ← CLAVE: evita overflow
           children: [
+            // Fila de iconos
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: EdgeInsets.all(8),
+                  padding: EdgeInsets.all(6), // ← Padding reducido
                   decoration: BoxDecoration(
                     color: color.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(8),
+                    borderRadius: BorderRadius.circular(6),
                   ),
-                  child: Icon(icon, color: color, size: 20),
+                  child: Icon(icon, color: color, size: 16), // ← Tamaño fijo pequeño
                 ),
-                Icon(Icons.more_vert, color: Color(0xFF568FA6), size: 18),
+                Icon(Icons.more_vert, color: theme.colorScheme.secondary, size: 16),
               ],
             ),
-            SizedBox(height: 12),
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: color,
+            
+            // Espacio flexible
+            SizedBox(height: 8),
+            
+            // Valor
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                value,
+                style: TextStyle(
+                  fontSize: 16, // ← Tamaño fijo
+                  fontWeight: FontWeight.bold,
+                  color: color,
+                ),
               ),
             ),
+            
             SizedBox(height: 4),
+            
+            // Título con altura controlada
             Text(
               title,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 12, // ← Tamaño fijo más pequeño
                 color: Color(0xFF585859),
+                height: 1.1, // ← Menor interlineado
               ),
+              maxLines: 2, // ← REDUCIDO a 2 líneas para evitar overflow
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
       ),
     );
   }
-  
-  Widget _buildCajaStatusCard(BuildContext context) {
+
+  Widget _buildCajaStatusCard(BuildContext context, double screenWidth) {
+    final theme = Theme.of(context);
+    
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(20),
+        padding: EdgeInsets.all(_getCardPadding(screenWidth)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -212,7 +334,7 @@ class DashboardScreen extends StatelessWidget {
                 Text(
                   "Estado de Caja",
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: _getTitleFontSize(screenWidth),
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF585859),
                   ),
@@ -232,7 +354,7 @@ class DashboardScreen extends StatelessWidget {
                         style: TextStyle(
                           color: Colors.green,
                           fontWeight: FontWeight.bold,
-                          fontSize: 12,
+                          fontSize: _getSmallFontSize(screenWidth),
                         ),
                       ),
                     ],
@@ -240,30 +362,27 @@ class DashboardScreen extends StatelessWidget {
                 ),
               ],
             ),
-            SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _buildCajaItem("Fondo Inicial", "\$2,000.00"),
-                _buildCajaItem("Ventas Efectivo", "\$8,230.00"),
-                _buildCajaItem("Saldo Actual", "\$10,230.00"),
-              ],
-            ),
-            SizedBox(height: 16),
+            SizedBox(height: _getInnerSpacing(screenWidth)),
+            _buildCajaItems(context, screenWidth),
+            SizedBox(height: _getInnerSpacing(screenWidth)),
             Container(
               width: double.infinity,
               child: ElevatedButton.icon(
-                icon: Icon(Icons.account_balance_wallet, size: 18),
-                label: Text("VER MOVIMIENTOS DE CAJA"),
+                icon: Icon(Icons.account_balance_wallet, size: _getSmallIconSize(screenWidth)),
+                label: Text(
+                  "VER MOVIMIENTOS DE CAJA",
+                  style: TextStyle(fontSize: _getButtonFontSize(screenWidth)),
+                ),
                 onPressed: () {
-                  Navigator.pushNamed(context, Routes.caja); // ✅ Usar constante
+                  Navigator.pushNamed(context, Routes.caja);
                 },
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Color(0xFF07598C),
+                  backgroundColor: theme.primaryColor,
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
+                  padding: EdgeInsets.symmetric(vertical: _getButtonPadding(screenWidth)),
                 ),
               ),
             ),
@@ -273,22 +392,49 @@ class DashboardScreen extends StatelessWidget {
     );
   }
   
-  Widget _buildCajaItem(String label, String value) {
+  Widget _buildCajaItems(BuildContext context, double screenWidth) {
+    final theme = Theme.of(context);
+    
+    if (screenWidth > 400) {
+      // Layout horizontal para pantallas más grandes
+      return Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          _buildCajaItem("Fondo Inicial", "\$2,000.00", screenWidth, theme),
+          _buildCajaItem("Ventas Efectivo", "\$8,230.00", screenWidth, theme),
+          _buildCajaItem("Saldo Actual", "\$10,230.00", screenWidth, theme),
+        ],
+      );
+    } else {
+      // Layout vertical para pantallas pequeñas
+      return Column(
+        children: [
+          _buildCajaItem("Fondo Inicial", "\$2,000.00", screenWidth, theme),
+          SizedBox(height: 8),
+          _buildCajaItem("Ventas Efectivo", "\$8,230.00", screenWidth, theme),
+          SizedBox(height: 8),
+          _buildCajaItem("Saldo Actual", "\$10,230.00", screenWidth, theme),
+        ],
+      );
+    }
+  }
+  
+  Widget _buildCajaItem(String label, String value, double screenWidth, ThemeData theme) {
     return Column(
       children: [
         Text(
           value,
           style: TextStyle(
-            fontSize: 14,
+            fontSize: _getValueFontSize(screenWidth),
             fontWeight: FontWeight.bold,
-            color: Color(0xFF03658C),
+            color: theme.colorScheme.primary,
           ),
         ),
         SizedBox(height: 4),
         Text(
           label,
           style: TextStyle(
-            fontSize: 10,
+            fontSize: _getSmallFontSize(screenWidth),
             color: Color(0xFF585859),
           ),
           textAlign: TextAlign.center,
@@ -297,52 +443,55 @@ class DashboardScreen extends StatelessWidget {
     );
   }
   
-  Widget _buildSalesByCategoryCard() {
+  Widget _buildSalesByCategoryCard(BuildContext context, double screenWidth) {
+    final theme = Theme.of(context);
+    
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(20),
+        padding: EdgeInsets.all(_getCardPadding(screenWidth)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               "Ventas por Categoría",
               style: TextStyle(
-                fontSize: 18,
+                fontSize: _getTitleFontSize(screenWidth),
                 fontWeight: FontWeight.bold,
                 color: Color(0xFF585859),
               ),
             ),
-            SizedBox(height: 16),
-            _buildCategoryItem("Abarrotes", 42, "\$4,250", Color(0xFF07598C)),
-            _buildCategoryItem("Bebidas", 35, "\$3,120", Color(0xFF03658C)),
-            _buildCategoryItem("Lácteos", 18, "\$1,850", Color(0xFF568FA6)),
-            _buildCategoryItem("Limpieza", 12, "\$980", Color(0xFF585859)),
+            SizedBox(height: _getInnerSpacing(screenWidth)),
+            _buildCategoryItem("Abarrotes", 42, "\$4,250", theme.primaryColor, screenWidth),
+            _buildCategoryItem("Bebidas", 35, "\$3,120", theme.colorScheme.primary, screenWidth),
+            _buildCategoryItem("Lácteos", 18, "\$1,850", theme.colorScheme.secondary!, screenWidth),
+            _buildCategoryItem("Limpieza", 12, "\$980", Color(0xFF585859), screenWidth),
           ],
         ),
       ),
     );
   }
   
-  Widget _buildCategoryItem(String category, int percent, String amount, Color color) {
+  Widget _buildCategoryItem(String category, int percent, String amount, Color color, double screenWidth) {
     return Column(
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
             Expanded(
-              flex: 2,
+              flex: screenWidth > 400 ? 2 : 3,
               child: Text(
                 category,
                 style: TextStyle(
                   color: Color(0xFF585859),
                   fontWeight: FontWeight.w500,
+                  fontSize: _getLabelFontSize(screenWidth),
                 ),
               ),
             ),
             Expanded(
-              flex: 3,
+              flex: screenWidth > 400 ? 3 : 4,
               child: LinearProgressIndicator(
                 value: percent / 100,
                 backgroundColor: color.withOpacity(0.2),
@@ -358,7 +507,7 @@ class DashboardScreen extends StatelessWidget {
                 style: TextStyle(
                   color: color,
                   fontWeight: FontWeight.bold,
-                  fontSize: 12,
+                  fontSize: _getSmallFontSize(screenWidth),
                 ),
               ),
             ),
@@ -369,12 +518,14 @@ class DashboardScreen extends StatelessWidget {
     );
   }
   
-  Widget _buildTopProductsCard(BuildContext context) {
+  Widget _buildTopProductsCard(BuildContext context, double screenWidth) {
+    final theme = Theme.of(context);
+    
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: EdgeInsets.all(20),
+        padding: EdgeInsets.all(_getCardPadding(screenWidth)),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -384,46 +535,46 @@ class DashboardScreen extends StatelessWidget {
                 Text(
                   "Productos Más Vendidos",
                   style: TextStyle(
-                    fontSize: 18,
+                    fontSize: _getTitleFontSize(screenWidth),
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF585859),
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.arrow_forward, color: Color(0xFF03658C)),
+                  icon: Icon(Icons.arrow_forward, color: theme.colorScheme.primary, size: _getIconSize(screenWidth)),
                   onPressed: () {
-                    Navigator.pushNamed(context, Routes.productos); // ✅ Usar constante
+                    Navigator.pushNamed(context, Routes.productos);
                   },
                 ),
               ],
             ),
-            SizedBox(height: 16),
-            _buildProductRankItem("Aceite Vegetal 1L", "45 unidades", 1),
-            _buildProductRankItem("Coca-Cola 600ml", "38 unidades", 2),
-            _buildProductRankItem("Leche Entera 1L", "32 unidades", 3),
-            _buildProductRankItem("Arroz 1kg", "28 unidades", 4),
-            _buildProductRankItem("Jabón Líquido", "25 unidades", 5),
+            SizedBox(height: _getInnerSpacing(screenWidth)),
+            _buildProductRankItem("Aceite Vegetal 1L", "45 unidades", 1, theme, screenWidth),
+            _buildProductRankItem("Coca-Cola 600ml", "38 unidades", 2, theme, screenWidth),
+            _buildProductRankItem("Leche Entera 1L", "32 unidades", 3, theme, screenWidth),
+            _buildProductRankItem("Arroz 1kg", "28 unidades", 4, theme, screenWidth),
+            _buildProductRankItem("Jabón Líquido", "25 unidades", 5, theme, screenWidth),
           ],
         ),
       ),
     );
   }
   
-  Widget _buildProductRankItem(String product, String sales, int rank) {
+  Widget _buildProductRankItem(String product, String sales, int rank, ThemeData theme, double screenWidth) {
     return Container(
-      margin: EdgeInsets.only(bottom: 12),
-      padding: EdgeInsets.all(12),
+      margin: EdgeInsets.only(bottom: _getInnerSpacing(screenWidth)),
+      padding: EdgeInsets.all(_getInnerSpacing(screenWidth)),
       decoration: BoxDecoration(
-        color: Color(0xFFF2F2F2),
+        color: theme.scaffoldBackgroundColor,
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
         children: [
           Container(
-            width: 24,
-            height: 24,
+            width: _getRankSize(screenWidth),
+            height: _getRankSize(screenWidth),
             decoration: BoxDecoration(
-              color: Color(0xFF07598C),
+              color: theme.primaryColor,
               shape: BoxShape.circle,
             ),
             child: Center(
@@ -431,13 +582,13 @@ class DashboardScreen extends StatelessWidget {
                 rank.toString(),
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 12,
+                  fontSize: _getSmallFontSize(screenWidth),
                   fontWeight: FontWeight.bold,
                 ),
               ),
             ),
           ),
-          SizedBox(width: 12),
+          SizedBox(width: _getInnerSpacing(screenWidth)),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -447,21 +598,114 @@ class DashboardScreen extends StatelessWidget {
                   style: TextStyle(
                     fontWeight: FontWeight.w500,
                     color: Color(0xFF585859),
+                    fontSize: _getLabelFontSize(screenWidth),
                   ),
                 ),
                 Text(
                   sales,
                   style: TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFF568FA6),
+                    fontSize: _getSmallFontSize(screenWidth),
+                    color: theme.colorScheme.secondary!,
                   ),
                 ),
               ],
             ),
           ),
-          Icon(Icons.chevron_right, color: Color(0xFF03658C)),
+          Icon(Icons.chevron_right, color: theme.colorScheme.primary, size: _getIconSize(screenWidth)),
         ],
       ),
     );
   }
+
+  // Métodos responsivos
+  double _getScreenPadding(double screenWidth) {
+    if (screenWidth < 400) return 12;
+    if (screenWidth < 600) return 16;
+    return 20;
+  }
+
+  double _getCardPadding(double screenWidth) {
+    if (screenWidth < 400) return 12; // ← Reducido
+    if (screenWidth < 600) return 14;
+    return 16;
+  }
+
+  double _getSpacing(double screenWidth) {
+    if (screenWidth < 400) return 16;
+    if (screenWidth < 600) return 18;
+    return 20;
+  }
+
+  double _getInnerSpacing(double screenWidth) {
+    if (screenWidth < 400) return 8;  // ← Reducido
+    if (screenWidth < 600) return 10;
+    return 12;
+  }
+
+  double _getTitleFontSize(double screenWidth) {
+    if (screenWidth < 400) return 16;
+    if (screenWidth < 600) return 17;
+    return 18;
+  }
+
+  double _getValueFontSize(double screenWidth) {
+    if (screenWidth < 400) return 14;
+    if (screenWidth < 600) return 16;
+    return 18;
+  }
+
+  double _getLabelFontSize(double screenWidth) {
+    if (screenWidth < 400) return 11;
+    if (screenWidth < 600) return 12;
+    return 12;
+  }
+
+  double _getSmallFontSize(double screenWidth) {
+    if (screenWidth < 400) return 10;
+    return 12;
+  }
+
+  double _getButtonFontSize(double screenWidth) {
+    if (screenWidth < 400) return 12;
+    return 14;
+  }
+
+  double _getIconSize(double screenWidth) {
+    if (screenWidth < 400) return 18;
+    return 20;
+  }
+
+  double _getSmallIconSize(double screenWidth) {
+    if (screenWidth < 400) return 16;
+    return 18;
+  }
+
+  double _getButtonPadding(double screenWidth) {
+    if (screenWidth < 400) return 12;
+    return 16;
+  }
+
+  double _getMetricCardHeight(double screenWidth) {
+    if (screenWidth < 400) return 120;
+    if (screenWidth < 600) return 130;
+    return 140;
+  }
+
+  double _getMetricCardWidth(double screenWidth, bool isTablet) {
+    if (isTablet) {
+      return (screenWidth - (_getSpacing(screenWidth) * 3)) / 2;
+    } else {
+      if (screenWidth < 400) return 150; // ← Reducido
+      if (screenWidth < 600) return 160;
+      return 170;
+    }
+  }
+
+  double _getRankSize(double screenWidth) {
+    if (screenWidth < 400) return 20;
+    return 24;
+  }
+
+
+
 }
