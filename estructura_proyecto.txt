@@ -1,18 +1,52 @@
 lib/
 ├── models/
-│   ├── user_model.dart
-│   ├── role_model.dart
-│   └── module_model.dart
+│   ├── user.dart
+│   ├── role.dart
+│   ├── module.dart
+│   ├── permission.dart
+│   ├── product.dart
+│   ├── sale.dart
+│   ├── caja.dart
+│   ├── cliente.dart
+│   ├── proveedor.dart
+│   ├── compra.dart
+│   ├── movimiento_caja.dart
+│   ├── variable_global.dart
+│   └── categoria.dart
 ├── providers/
 │   ├── auth_provider.dart
 │   ├── user_provider.dart
-│   └── database_provider.dart
-├── services/
-│   └── database_service.dart
+│   ├── role_provider.dart
+│   ├── module_provider.dart
+│   ├── product_provider.dart
+│   ├── sale_provider.dart
+│   ├── cliente_provider.dart
+│   ├── proveedor_provider.dart
+│   ├── caja_provider.dart
+│   ├── compra_provider.dart
+│   ├── variable_global_provider.dart
+│   └── categoria_provider.dart
 ├── screens/
 │   ├── admin/
-│   │   ├── users_screen.dart
-│   │   └── roles_screen.dart
-│   └── (tus screens existentes)
-└── widgets/
-    └── (tus widgets existentes)
+│   │   ├── users/
+│   │   ├── roles/
+│   │   └── permissions/
+│   ├── sales/
+│   │   └── venta_screen.dart
+│   ├── products/
+│   │   ├── productos_screen.dart
+│   │   └── categorias_screen.dart
+│   ├── clients/
+│   │   └── clientes_screen.dart
+│   ├── suppliers/
+│   │   ├── proveedores_screen.dart
+│   │   └── pagos_proveedor_screen.dart
+│   ├── cash/
+│   │   ├── caja_screen.dart
+│   │   └── movimientos_caja_screen.dart
+│   ├── purchases/
+│   │   └── compras_screen.dart
+│   └── settings/
+│       └── variables_globales_screen.dart
+└── services/
+    └── database_service.dart

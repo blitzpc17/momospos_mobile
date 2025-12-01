@@ -19,7 +19,7 @@ class Routes {
     return {
       login: (context) => LoginScreen(),
       dashboard: (context) => DashboardScreen(),
-      ventas: (context) => VentasScreen(),
+      ventas: (context) => VentaScreen(),
       productos: (context) => ProductosScreen(),
       clientes: (context) => ClientesScreen(),
       proveedores: (context) => ProveedoresScreen(),

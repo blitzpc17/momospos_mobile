@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/models.dart';
-import '../../models/user_model.dart';
-import '../../providers/user_provider.dart';
+import '../../providers/providers.dart';
 
 class UsersScreen extends StatefulWidget {
   @override
