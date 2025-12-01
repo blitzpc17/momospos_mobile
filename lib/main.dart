@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'providers/providers.dart';
 import 'routes/routes.dart';
-import 'providers/auth_provider.dart';
-import 'providers/user_provider.dart';
 
 void main() {
   runApp(MyApp());
@@ -15,6 +14,8 @@ class MyApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => UserProvider()),
+        ChangeNotifierProvider(create: (_) => RoleProvider()),
+        ChangeNotifierProvider(create: (_) => ModuleProvider()),
       ],
       child: MaterialApp(
         title: "MOMO'S POS",

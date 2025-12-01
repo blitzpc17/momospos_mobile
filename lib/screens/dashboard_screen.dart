@@ -1,8 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../providers/providers.dart';
 import '../widgets/app_drawer.dart';
 import '../routes/routes.dart';
 
-class DashboardScreen extends StatelessWidget {
+class DashboardScreen extends StatefulWidget {
+  @override
+  _DashboardScreenState createState() => _DashboardScreenState();
+}
+
+class _DashboardScreenState extends State<DashboardScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Cargar módulos al iniciar el dashboard
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<ModuleProvider>(context, listen: false).loadModules();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);

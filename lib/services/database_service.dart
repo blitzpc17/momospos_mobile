@@ -493,4 +493,97 @@ class DatabaseService {
       print('Error en resetDatabase: $e');
     }
   }
+
+  // Métodos para Roles
+
+Future<int> createRole(Role role) async {
+  final db = await database;
+  try {
+    return await db.insert('roles', role.toMap());
+  } catch (e) {
+    print('Error en createRole: $e');
+    return 0;
+  }
+}
+
+Future<int> updateRole(Role role) async {
+  final db = await database;
+  try {
+    return await db.update(
+      'roles',
+      role.toMap(),
+      where: 'id = ?',
+      whereArgs: [role.id],
+    );
+  } catch (e) {
+    print('Error en updateRole: $e');
+    return 0;
+  }
+}
+
+Future<int> deleteRole(int id) async {
+  final db = await database;
+  try {
+    return await db.delete(
+      'roles',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  } catch (e) {
+    print('Error en deleteRole: $e');
+    return 0;
+  }
+}
+
+// Métodos para Módulos
+Future<List<Module>> getModules() async {
+  final db = await database;
+  try {
+    final result = await db.rawQuery('SELECT * FROM modulos ORDER BY seccion, orden');
+    return result.map((map) => Module.fromMap(map)).toList();
+  } catch (e) {
+    print('Error en getModules: $e');
+    return [];
+  }
+}
+
+// Métodos para Permisos
+Future<List<Permission>> getPermissionsByRole(int roleId) async {
+  final db = await database;
+  try {
+    final result = await db.rawQuery('''
+      SELECT p.*, r.nombre as rol_nombre, m.nombre as modulo_nombre 
+      FROM permisos p 
+      LEFT JOIN roles r ON p.id_rol = r.id 
+      LEFT JOIN modulos m ON p.id_modulo = m.id 
+      WHERE p.id_rol = ?
+      ORDER BY m.seccion, m.orden
+    ''', [roleId]);
+    
+    return result.map((map) => Permission.fromMap(map)).toList();
+  } catch (e) {
+    print('Error en getPermissionsByRole: $e');
+    return [];
+  }
+}
+
+Future<int> updatePermission(Permission permission) async {
+  final db = await database;
+  try {
+    return await db.update(
+      'permisos',
+      permission.toMap(),
+      where: 'id = ?',
+      whereArgs: [permission.id],
+    );
+  } catch (e) {
+    print('Error en updatePermission: $e');
+    return 0;
+  }
+}
+
+
+
+
+
 }

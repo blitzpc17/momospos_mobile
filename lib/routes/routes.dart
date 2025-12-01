@@ -13,6 +13,7 @@ class Routes {
   static const String reportes = '/reportes';
   static const String configuracion = '/configuracion';
   static const String usuarios = '/usuarios';
+  static const String roles = '/roles';
   
   static Map<String, WidgetBuilder> getRoutes() {
     return {
@@ -27,6 +28,7 @@ class Routes {
       reportes: (context) => ReportesScreen(),
       configuracion: (context) => ConfiguracionScreen(),
       usuarios: (context) => UsersScreen(),
+      roles: (context) => RolesScreen(),
     };
   }
 }

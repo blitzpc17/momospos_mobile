@@ -1,3 +1,5 @@
+export 'package:momospos_mobile/screens/config/roles_screen.dart';
+export 'package:momospos_mobile/screens/config/permissions_screen.dart';
 export 'package:momospos_mobile/screens/config/user_scr4een.dart';
 export 'package:momospos_mobile/screens/caja_screen.dart';
 export 'package:momospos_mobile/screens/clientes_screen.dart';
@@ -9,4 +11,3 @@ export 'package:momospos_mobile/screens/productos_screen.dart';
 export 'package:momospos_mobile/screens/proveewdores_screen.dart';
 export 'package:momospos_mobile/screens/reportes_screen.dart';
 export 'package:momospos_mobile/screens/ventas_screen.dart';
-
