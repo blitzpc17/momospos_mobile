@@ -304,6 +304,8 @@ class DatabaseService {
       {'nombre': 'Compras', 'icono': 'shopping_basket', 'ruta': '/compras', 'seccion': 'reportes', 'orden': 2},
       {'nombre': 'Usuarios', 'icono': 'manage_accounts', 'ruta': '/usuarios', 'seccion': 'configuracion', 'orden': 1},
       {'nombre': 'Configuración', 'icono': 'settings', 'ruta': '/configuracion', 'seccion': 'configuracion', 'orden': 2},
+      {'nombre': 'Roles', 'icono': 'settings', 'ruta': '/roles', 'seccion': 'configuracion', 'orden': 3},
+      {'nombre': 'Módulos', 'icono': 'settings', 'ruta': '/modulos', 'seccion': 'configuracion', 'orden': 4},
     ];
 
     for (var modulo in modulos) {
@@ -532,18 +534,6 @@ Future<int> deleteRole(int id) async {
   } catch (e) {
     print('Error en deleteRole: $e');
     return 0;
-  }
-}
-
-// Métodos para Módulos
-Future<List<Module>> getModules() async {
-  final db = await database;
-  try {
-    final result = await db.rawQuery('SELECT * FROM modulos ORDER BY seccion, orden');
-    return result.map((map) => Module.fromMap(map)).toList();
-  } catch (e) {
-    print('Error en getModules: $e');
-    return [];
   }
 }
 

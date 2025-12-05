@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:momospos_mobile/providers/variable_global_provider.dart';
 import 'package:provider/provider.dart';
 import 'providers/providers.dart';
 import 'routes/routes.dart';
@@ -17,7 +18,13 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => RoleProvider()),
         ChangeNotifierProvider(create: (_) => ModuleProvider()),
         ChangeNotifierProvider(create: (_) => SaleProvider()),
-        ChangeNotifierProvider(create: (_) => ProductProvider())
+        ChangeNotifierProvider(create: (_) => ProductProvider()),
+        ChangeNotifierProvider(create: (_) => ClienteProvider()),
+        ChangeNotifierProvider(create: (_) => ProveedorProvider()),
+        ChangeNotifierProvider(create: (_) => CajaProvider()),
+        ChangeNotifierProvider(create: (_) => CompraProvider()),
+        ChangeNotifierProvider(create: (_) => VariableGlobalProvider()),
+        ChangeNotifierProvider(create: (_) => CategoriaProvider()),
       ],
       child: MaterialApp(
         title: "MOMO'S POS",
